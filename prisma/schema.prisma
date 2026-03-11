@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  memberships TenantMember[]
+  createdAt DateTime @default(now())
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String   // company name
+  memberships TenantMember[]
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  OWNER    // Şirketi kuran kişi (Fatura öder, herkesi yönetir)
+  ADMIN    // Yönetici (İzinleri onaylayabilir)
+  EMPLOYEE // Standart çalışan (Sadece kendi izinlerini görür)
+}
+
+model TenantMember {
+  id        String   @id @default(uuid())
+  userId    String
+  tenantId  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+
+  
+  user      User     @relation(fields: [userId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  //bir kullanıcı aynı şirkete iki kere eklenemez
+  @@unique([userId, tenantId])
+}
