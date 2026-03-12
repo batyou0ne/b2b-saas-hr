@@ -32,7 +32,7 @@ async function main() {
     const membership = await prisma.tenantMember.create({
         data: {
             userId: newUser.id,
-            tenantId: tenant.id,
+            tenantId: company.id,
             role: "EMPLOYEE"
         }
     })

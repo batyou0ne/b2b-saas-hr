@@ -14,10 +14,10 @@ const roleHierarchy = {
     EMPLOYEE: 1
 }
 
-async function checkTenantAccess(userId, tenant, requiredRole) {
+async function checkTenantAccess(userId, tenantId, requiredRole) {
     console.log(`Checking access... User: ${userId} | Tenant: ${tenantId}`);
 
-    const membership = await prisma.tenant.findUnique({
+    const membership = await prisma.tenantMember.findUnique({
         where: {
             userId_tenantId: {
                 userId: userId,
@@ -45,7 +45,42 @@ async function checkTenantAccess(userId, tenant, requiredRole) {
 }
 
 async function testMiddleware() {
+    console.log("Fetching test users from the database...");
+
+    const tenant = await prisma.tenant.findFirst();
+    const ahmet = await prisma.user.findUnique({
+        where: {
+            email: "ahmet@superyazilim.com"
+        }
+    });
+    const ayse = await prisma.user.findUnique({
+        where: {
+            email: "ayse@superyazilim.com"
+        }
+    });
+
+    if (!tenant || !ayse || !ahmet) {
+        console.log("Error: Test data not found. Did you run index.js and invite.js?");
+        return;
+
+    }
+    console.log("\n--- TEST 1: Employee performing a basic task ---");
+    await checkTenantAccess(ayse.id, tenant.id, "EMPLOYEE");
+
+    console.log("\n--- TEST 2: Employee trying to do a Patron job ---");
+    await checkTenantAccess(ayse.id, tenant.id, "OWNER");
+
+    console.log("\n--- TEST 3: Patron doing an Admin job ---");
+    await checkTenantAccess(ahmet.id, tenant.id, "ADMIN");
+
+    console.log("\n--- TEST 4: Unknown user trying to hack in ---");
+    const fakeUserId = "123e4567-e89b-12d3-a456-426614174000"; // Uydurma bir UUID
+    await checkTenantAccess(fakeUserId, tenant.id, "EMPLOYEE");
+
 
 }
 
-testMiddleware();
+testMiddleware()
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
