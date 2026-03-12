@@ -12,6 +12,7 @@ model User {
   password  String
   name      String?
   memberships TenantMember[]
+  leaveRequests LeaveRequest[]
   createdAt DateTime @default(now())
 }
 
@@ -19,6 +20,7 @@ model Tenant {
   id        String   @id @default(uuid())
   name      String   // company name
   memberships TenantMember[]
+  leaveRequests LeaveRequest[]
   createdAt DateTime @default(now())
 }
 
@@ -41,4 +43,27 @@ model TenantMember {
 
   //bir kullanıcı aynı şirkete iki kere eklenemez
   @@unique([userId, tenantId])
+}
+
+enum RequestStatus {
+  PENDING   
+  APPROVED  
+  REJECTED 
+}
+
+model LeaveRequest {
+  id          String        @id @default(uuid())
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+
+  // Foreign Keys 
+  userId      String
+  tenantId    String
+
+  // Relations 
+  user        User          @relation(fields: [userId], references: [id])
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
 }
